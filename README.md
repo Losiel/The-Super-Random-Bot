@@ -1,10 +1,10 @@
 # Information
-The code is using [Discordia](https://github.com/SinisterRectus/Discordia/), [Luvit](https://luvit.io/) and of course: Lua.
+The code is using [Discordia](https://github.com/SinisterRectus/Discordia/), [Luvit](https://luvit.io/) and of course: Lua.<br/>
 This bot gives you information about a random Roblox game with the command `rgame`
 
 # Running
-This bot depends on [Discordia](https://github.com/SinisterRectus/Discordia/).
-To install Discordia, run the following command: `lit install SinisterRectus/discordia`
+This bot depends on [Discordia](https://github.com/SinisterRectus/Discordia/).<br/>
+To install Discordia, run the following command: `lit install SinisterRectus/discordia`<br/>
 To run the bot, run the following command: `luvit main.lua`
 
 # Note
