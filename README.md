@@ -19,3 +19,9 @@ return {
 ```
 `BOT_TOKEN` should be your Discord's bot token<br/>
 `ROBLOX_TOKEN` should be your Roblox's cookie, you might not provide it (and leave it as an empty string), but if thats the case then the bot wont be able to check if a bot is online<br/>
+
+# Credits
+This bot uses the following libraries
+- ~~[json](https://github.com/rxi/json.lua)~~ (replaced with Luvit's JSON)
+- [html](https://github.com/thenumbernine/htmlparser-lua/blob/master/htmlparser.lua) (used to parse Roblox ads)
+- [serpent](https://github.com/pkulchenko/serpent) (for debugging purposes, not actually used on the code but its there to debug)
