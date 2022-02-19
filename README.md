@@ -18,7 +18,7 @@ return {
 }
 ```
 `BOT_TOKEN` should be your Discord's bot token<br/>
-`ROBLOX_TOKEN` should be your Roblox's cookie, you might not provide it (and leave it as an empty string), but if thats the case then the bot wont be able to check if a bot is online<br/>
+`ROBLOX_TOKEN` should be your Roblox's cookie, you might not provide it (and leave it as an empty string), but if thats the case then the bot wont be able to check if a game is public<br/>
 
 # Credits
 This bot uses the following libraries

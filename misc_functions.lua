@@ -29,6 +29,13 @@ function module.httpGet(url, ...)
 end
 
 function module.getPlayabilityStatus(game)
+	if important.ROBLOX_TOKEN == "" then
+		print("ROBLOX COOKIE NOT PROVIDED!")
+		return {
+			reasonProhibited = "None";
+		}
+	end
+	
 	local url = "https://games.roblox.com/v1/games/multiget-place-details?placeIds=" .. game.rootPlaceId
 	local data = module.httpGet(url, {{"Cookie", important.ROBLOX_TOKEN}})
 	return data and data[1]
