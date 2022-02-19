@@ -9,7 +9,7 @@ To install Discordia, run the following command: `lit install SinisterRectus/dis
 To run the bot, run the following command: `luvit main.lua`
 
 # Note
-The bot requires of your Discord bot's token (to put your bot online) and your Roblox account's token (to check if a bot is online)<br/>
+The bot requires of your Discord bot's token (to put your bot online) and your Roblox account's token (to check if a game is online)<br/>
 That information should be inside `important_info.lua`, so create one with:<br/>
 ```lua
 return {
