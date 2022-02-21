@@ -19,7 +19,7 @@ local html = require("libs/html")
 
 local important = require("important_info")
 local misc = require("misc_functions")
-local game = require("game_functions")
+local game = require("roblox")
 local commands = require("commands")
 
 local client = da.Client()

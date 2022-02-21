@@ -4,35 +4,9 @@ local MIN_ID = 10000
 local MAX_ID = 3582601336
 
 local misc = require("misc_functions")
-local game = require("game_functions")
+local roblox = require("roblox")
 local serpent = require("libs/serpent")
 local timer = package.preload["timer"]
-
--- rate limit commands library
-local RATE_LIMITED_MSGS = {}
-
-local function isRateLimitted(msg, command)
-	return RATE_LIMITED_MSGS[#msg.channel .. command]
-end
-
-local function startRateLimit(msg, command)
-	RATE_LIMITED_MSGS[#msg.channel .. command] = true
-end
-
-local function stopRateLimit(msg, command)
-	RATE_LIMITED_MSGS[#msg.channel .. command] = nil
-end
-
-local function rateLimit(msg, cmd, catch, run)
-	if isRateLimitted(msg, cmd) then
-		catch()
-		return
-	end
-	
-	startRateLimit(msg, cmd)
-	run()
-	stopRateLimit(msg, cmd)
-end
 
 local function warn(msg, str)
 	return function()
@@ -45,87 +19,104 @@ local function warn(msg, str)
 	end
 end
 
-local function generateEmbedForGame(gameinfo, time)
+local function generateEmbedForGame(gameinfo)
 	local embed = {}
 	embed.title = gameinfo.name
 	embed.description = gameinfo.description
-	embed.url = misc.getGameLink(gameinfo)
+	embed.url = roblox.getGameLink(gameinfo)
 	embed.color = misc.successColor
 	
 	embed.footer = {
-		text = (gameinfo.cached and "(Cached)" or ("Took " .. time .. "s to fetch game")) .. " · Developer info {UniverseId: " .. gameinfo.id .. "}";
+		text =
+			(
+				(gameinfo.cached and "(Cached, took )" .. gameinfo.benchmark .. "s")
+				or
+				("Took " .. gameinfo.benchmark .. "s to fetch game")
+			)
+			.. " · Developer info {UniverseId: " .. gameinfo.id .. "}";
 	}
 	embed.author = {
 		name = gameinfo.creator.name;
-		url = misc.getCreatorLink(gameinfo);
+		url = roblox.getCreatorLink(gameinfo);
 	}
-	local avatar = misc.getCreatorAvatar(gameinfo)
+	local avatar = roblox.getCreatorAvatar(gameinfo)
 	if avatar then
 		embed.author.icon_url = avatar.imageUrl
 	end
 	
-	local icon = misc.getGameIcon(gameinfo)
+	local icon = roblox.getGameIcon(gameinfo)
 	if icon then
 		embed.thumbnail = {
-			url = icon and icon.imageUrl or misc.defaultIcon;
+			url = icon and icon.imageUrl or roblox.defaultIcon;
 			width = 50;
 			height = 50;
 		}
 	end
 	
-	local image = misc.getGameThumbnail(gameinfo)
+	local image = roblox.getGameThumbnail(gameinfo)
 	embed.image = {
-		url = image and image.imageUrl or misc.defaultThumbnail;
+		url = image and image.imageUrl or roblox.defaultThumbnail;
 		width = 480;
 		height = 270;
 	}
 	
+	local str = ""
+	
+	-- favorites
+	str = str .. ":star: " .. ((gameinfo.favoritedCount == 0 and "No favorites") or gameinfo.favoritedCount)
+	
+	-- upvotes
+	local upvotes = roblox.getGameUpvotes(gameinfo)
+	if not upvotes then
+		str = str .. "\n :thumbsup: :thumbsdown: Unable to get game score"
+	elseif upvotes.upVotes == 0 and upvotes.downVotes == 0 then
+		str = str .. "\n :thumbsup: :thumbsdown: Game doesnt have score"
+	else
+		local downvotes = upvotes.downVotes
+		local upvotes = upvotes.upVotes
+		local totalvotes = upvotes + downvotes
+		str = str .. ("\n :thumbsup: %d (%d%%)    :thumbsdown: %d (%d%%)"):format(
+			upvotes,
+			math.floor((upvotes / totalvotes)*100 + 0.5),
+			downvotes,
+			math.floor((downvotes / totalvotes)*100 + 0.5)
+		)
+	end
+	
+	-- people playing
+	str = str .. "\n :busts_in_silhouette: " .. ((gameinfo.playing == 0 and "Nobody is playing") or ("Users playing: " .. gameinfo.playing))
+	
+	-- visits
+	str = str .. "\n :busts_in_silhouette: " .. ((gameinfo.visits == 0 and "**No visits**") or ("Visits: " .. gameinfo.visits))
+	
+	-- maxplayers
+	str = str .. "\n :busts_in_silhouette: Max players: " .. gameinfo.maxPlayers
+	
+	-- dates
+	local created = roblox.getMainDate(gameinfo.created)
+	local updated = roblox.getMainDate(gameinfo.updated)
+	str = str .. "\n :calendar: Created: " .. roblox.getMainDate(created)
+	str = str .. "\n :calendar: " .. ((updated == created and "**Never updated**") or ("Updated: " .. updated))
+	
+	-- genre
+	str = str .. "\n :performing_arts: Genre: " .. (gameinfo.isAllGenre and "All" or gameinfo.genre)
+		
+	if gameinfo.copyingAllowed then
+		str = str .. "\n :link: **THIS GAME IS UNCOPYLOCKED**"
+	end
+				
+	if tonumber(roblox.getMainAge(gameinfo.created)) <= 2014 then
+		str = str .. "\n :open_mouth: **THIS GAME IS OLD**"
+	end
+				
+	if upvotes and upvotes.downVotes > upvotes.upVotes then
+		str = str .. "\n :warning: **THIS GAME HAS MORE DOWNVOTES THAN UPVOTES**"
+	end
+	
 	embed.fields = {
 		{
 			name = "Data";
-			value = (function()
-				str = ":star: " .. ((gameinfo.favoritedCount == 0 and "No favorites") or gameinfo.favoritedCount)
-				
-				local upvotes = misc.getGameUpvotes(gameinfo)
-				if not upvotes then
-					str = str .. "\n :thumbsup: :thumbsdown: Unable to get game score"
-				elseif upvotes.upVotes == 0 and upvotes.downVotes == 0 then
-					str = str .. "\n :thumbsup: :thumbsdown: Game doesnt have score"
-				else
-					local downvotes = upvotes.downVotes
-					local upvotes = upvotes.upVotes
-					local totalvotes = upvotes + downvotes
-					str = str .. ("\n :thumbsup: %d (%d%%)    :thumbsdown: %d (%d%%)"):format(
-						upvotes,
-						math.floor((upvotes / totalvotes)*100 + 0.5),
-						downvotes,
-						math.floor((downvotes / totalvotes)*100 + 0.5)
-					)
-				end
-				
-				str = str .. "\n :busts_in_silhouette: " .. ((gameinfo.playing == 0 and "Nobody is playing") or ("Users playing: " .. gameinfo.playing))
-				str = str .. "\n :busts_in_silhouette: " .. ((gameinfo.visits == 0 and "**No visits**") or ("Visits: " .. gameinfo.visits))
-				str = str .. "\n :busts_in_silhouette: Max players: " .. gameinfo.maxPlayers
-				local created = misc.getMainDate(gameinfo.created)
-				local updated = misc.getMainDate(gameinfo.updated)
-				str = str .. "\n :calendar: Created: " .. misc.getMainDate(created)
-				str = str .. "\n :calendar: " .. ((updated == created and "**Never updated**") or ("Updated: " .. updated))
-				str = str .. "\n :performing_arts: Genre: " .. (gameinfo.isAllGenre and "All" or gameinfo.genre)
-				
-				if gameinfo.copyingAllowed then
-					str = str .. "\n :link: **THIS GAME IS UNCOPYLOCKED**"
-				end
-				
-				if tonumber(misc.getMainAge(gameinfo.created)) <= 2014 then
-					str = str .. "\n :open_mouth: **THIS GAME IS OLD**"
-				end
-				
-				if upvotes and upvotes.downVotes > upvotes.upVotes then
-					str = str .. "\n :warning: **THIS GAME HAS MORE DOWNVOTES THAN UPVOTES**"
-				end
-				
-				return str
-			end)();
+			value = str;
 			inline = false;
 		}
 	}
@@ -134,7 +125,7 @@ local function generateEmbedForGame(gameinfo, time)
 end
 
 local cached_games = {}
-local function giveRandomGame(msg, filter, attempts, ids)
+local function giveRandomGame(msg, attempts, ids)
 	-- display game
 	local benchmark = os.time()
 	
@@ -145,7 +136,10 @@ local function giveRandomGame(msg, filter, attempts, ids)
 	if not gameinfo then
 		for i = 1, 5 do
 			coroutine.wrap(function()
-				gameinfo, fetcherror = game.randomGame(MIN_ID, MAX_ID, filter, attempts, ids)
+				gameinfo, fetcherror = roblox.randomGame(MIN_ID, MAX_ID, attempts, ids)
+				if gameinfo then
+					gameinfo.benchmark = benchmark - os.time()
+				end
 				if generated then
 					if not fetcherror then
 						gameinfo.cached = true
@@ -185,53 +179,33 @@ local function giveRandomGame(msg, filter, attempts, ids)
 		return
 	end
 	
-	local embed = generateEmbedForGame(gameinfo, os.time() - benchmark)
+	local embed = generateEmbedForGame(gameinfo)
 	
 	msg:reply({embed = embed})
 end
 
 function module.rgame(msg)
-	-- rateLimit(msg, "rgame", warn(msg, "A game is already being generated"), function()
-		giveRandomGame(msg, game.isValidGame, 25, 15)
-	-- end)
-end
-
--- function module.rrgame(msg)
-	-- rateLimit(msg, "rgame", warn(msg, "A game is already being generated"), function()
-		-- giveRandomGame(msg, game.isValidLessStrictGame, 25, 15)
-	-- end)
--- end
-
-function module.rugame(msg)
-	msg:reply {
-		embed = {
-			title = "Command temporaly disabled";
-		}
-	}
-	-- giveRandomGame(msg, game.isValidGoodGame, 15, 60)
+	giveRandomGame(msg, 25, 15)
 end
 
 function module.rad(msg)
-	-- rateLimit(msg, "rad", warn(msg, "An ad is already being generated"), function()
-		local ad = misc.parseAd(misc.getAdHtml())
-	
-		msg:reply {
-			embed = {
-				title = ad.title or "Ad";
-				url = ad.link;
-				color = misc.successColor;
-				image = {
-					url = ad.image;
-					height = ad.height;
-					width = ad.width;
-				};
-			}
+	local ad = roblox.parseAd(roblox.getAdHtml())
+		
+	msg:reply {
+		embed = {
+			title = ad.title or "Ad";
+			url = ad.link;
+			color = misc.successColor;
+			image = {
+				url = ad.image;
+				height = ad.height;
+				width = ad.width;
+			};
 		}
-	-- end)
+	}
 end
 
 function module.rscp(msg)
-	
 	msg:reply("scp-" .. tostring(math.random(1,6000)))
 end
 
