@@ -5,6 +5,7 @@ local MAX_ID = 3582601336
 
 local misc = require("misc_functions")
 local roblox = require("roblox")
+local gd = require("geometrydash")
 local serpent = require("libs/serpent")
 local timer = package.preload["timer"]
 
@@ -238,9 +239,114 @@ function module.rhelp(msg)
 			           .. "\n`rad   ` - Random Roblox ad"
 					   .. "\n`remoji` - Random emoji"
 					   .. "\n`rscp  ` - Random SCP"
+					   .. "\n`rgd   ` - Random Geometry Dash level"
 					   .. "\n||`[REDACTED]`|| - ||`[REDACTED]`||"
 		}
 	}
+end
+
+function module.rgd(msg)
+	-- this doesnt need caching or anything complex as
+	-- getting a random playable geometry dash level doesnt require that many complexity
+	local level
+	
+	loadingmsg = msg:reply {embed = {
+		title = "Fetching level...";
+		color = misc.warningColor;
+	}}
+	
+	repeat
+		level = gd.getLevelInfo(gd.getRandomId())
+	until level ~= -1 -- if there was an error, gd.getLevelInfo will return -1, so we want to keep going if there are any errors
+	
+	print("Found geometry dash level " .. level.id)
+	
+	local embed = {}
+	embed.title = level.name
+	embed.description = level.description ~= "(No description provided)" and level.description or ""
+	embed.url = gd.getBrowserLink(level)
+	embed.color = misc.successColor
+	
+	embed.author = {
+		name = level.author;
+		url = gd.getUserLink(level.playerID);
+		icon_url = gd.getUserIcon(level.author);
+	}
+	
+	embed.footer = {
+		text = "Level id: " .. level.id
+	}
+	
+	local str = ""	
+	
+	-- difficulty
+	str = str .. gd.difficultyFaces[level.difficulty] .. " " .. level.difficulty
+	
+	-- downloads
+	str = str .. "\n :inbox_tray: " .. level.downloads
+	
+	-- likes
+	local upvotes = level.likes
+	if upvotes > 0 then
+		str = str .. "\n :thumbsup: " .. upvotes
+	elseif upvotes < 0 then
+		str = str .. "\n :thumbsdown: " .. upvotes
+	else
+		str = str .. "\n :thumbsup: :thumbsdown: 0"
+	end
+	
+	-- stars
+	if level.stars > 0 then
+		str = str .. "\n :star: " .. level.stars
+	end
+	
+	-- coins
+	if level.coins > 0 then
+		str = str .. "\n :coin: " .. level.coins
+		if not level.verifiedCoins then
+			str = str .. " (Unverified)"
+		end
+	end
+	
+	-- length
+	str = str .. "\n :alarm_clock: " .. level.length
+	
+	-- ldm
+	if level.ldm then
+		str = str .. "\n :open_mouth: **This level allows LDM**"
+	end
+	
+	-- two player
+	if level.twoPlayer then
+		str = str .. "\n :open_mouth: **This level is for two players**"
+	end
+	
+	-- song
+	local song = ""
+	if level.songLink then
+		song = song .. "[" .. level.songName .. "](" .. level.songLink .. ")"
+	else
+		song = song .. level.songName
+	end
+	song = song .. "\n by " .. level.songAuthor
+	
+	embed.fields = {
+		{
+			name = "Data";
+			value = str;
+			inline = false;
+		},
+		{
+			name = "Song";
+			value = song;
+			inline = false;
+		}
+	}
+	
+	msg:reply {
+		embed = embed
+	}
+	loadingmsg:delete()
 end
 
 return module

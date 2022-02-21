@@ -25,3 +25,4 @@ This bot uses the following libraries
 - ~~[json](https://github.com/rxi/json.lua)~~ (replaced with Luvit's JSON)
 - [html](https://github.com/thenumbernine/htmlparser-lua/blob/master/htmlparser.lua) (used to parse Roblox ads)
 - [serpent](https://github.com/pkulchenko/serpent) (for debugging purposes, not actually used on the code but its there to debug)
+- [Colon's Geometry Dash API](https://gdbrowser.com/api/) (Geometry Dash's API is a hell, Colon made it easy)
