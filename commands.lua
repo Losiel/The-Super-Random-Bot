@@ -29,7 +29,7 @@ local function generateEmbedForGame(gameinfo)
 	embed.footer = {
 		text =
 			(
-				(gameinfo.cached and "(Cached, took )" .. gameinfo.benchmark .. "s")
+				(gameinfo.cached and "(Cached, took " .. gameinfo.benchmark .. "s)")
 				or
 				("Took " .. gameinfo.benchmark .. "s to fetch game")
 			)
@@ -138,7 +138,7 @@ local function giveRandomGame(msg, attempts, ids)
 			coroutine.wrap(function()
 				gameinfo, fetcherror = roblox.randomGame(MIN_ID, MAX_ID, attempts, ids)
 				if gameinfo then
-					gameinfo.benchmark = benchmark - os.time()
+					gameinfo.benchmark = os.time() - benchmark
 				end
 				if generated then
 					if not fetcherror then
