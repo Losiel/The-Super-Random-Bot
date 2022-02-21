@@ -195,7 +195,7 @@ function module.rad(msg)
 		
 	msg:reply {
 		embed = {
-			title = ad.title or "Ad";
+			title = ad.name or "Ad";
 			url = ad.link;
 			color = misc.successColor;
 			image = {
