@@ -165,11 +165,12 @@ local function giveRandomGame(msg, attempts, ids)
 			timer.sleep(100)
 		until gameinfo or fetcherror
 		
-		loadingmsg:delete()
+		if loadingmsg then -- there is a possibility it can be nil
+			loadingmsg:delete()
+		end
 	end
 	
 	if not gameinfo then
-		loadingmsg:delete()
 		msg:reply {
 			embed = {
 				title = "Error: " .. fetcherror;
