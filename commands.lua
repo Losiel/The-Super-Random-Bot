@@ -384,7 +384,7 @@ function module.rgit(msg)
 	
 	embed.author = {
 		name = repo.owner.login;
-		url = repo.owner.url;
+		url = repo.owner.html_url;
 		icon_url = repo.owner.avatar_url;
 	}
 	
