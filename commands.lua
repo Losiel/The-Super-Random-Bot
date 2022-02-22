@@ -5,6 +5,7 @@ local MAX_ID = 3582601336
 
 local misc = require("misc_functions")
 local roblox = require("roblox")
+local github = require("github")
 local gd = require("geometrydash")
 local serpent = require("libs/serpent")
 local timer = package.preload["timer"]
@@ -240,6 +241,7 @@ function module.rhelp(msg)
 					   .. "\n`remoji` - Random emoji"
 					   .. "\n`rscp  ` - Random SCP"
 					   .. "\n`rgd   ` - Random Geometry Dash level"
+					   .. "\n`rgit  ` - Random Github repository"
 					   .. "\n||`[REDACTED]`|| - ||`[REDACTED]`||"
 		}
 	}
@@ -347,6 +349,83 @@ function module.rgd(msg)
 		embed = embed
 	}
 	loadingmsg:delete()
+end
+
+function module.rgit(msg)
+	-- this doesnt need caching or anything complex as
+	-- getting a random public github repository doesnt require that many complexity
+	local repo
+	local attempts = 0
+	repeat
+		local id = github.randomId()
+		repo = github.getRepoFromId(id)
+		if not repo then
+			attempts = attempts + 1
+			timer.sleep(100)
+		end
+	until repo and repo.visibility == "public" or attempts > 10
+	
+	print("Found repo", repo.name)
+	
+	if attempts > 10 then
+		msg:reply {
+			embed = {
+				color = misc.errorColor;
+				title = "Timeout!";
+			}
+		}
+	end
+	
+	local embed = {}
+	embed.title = repo.name
+	embed.url = repo.html_url
+	embed.description = repo.description or ""
+	embed.color = misc.successColor
+	
+	embed.author = {
+		name = repo.owner.login;
+		url = repo.owner.url;
+		icon_url = repo.owner.avatar_url;
+	}
+	
+	local str = ""
+	
+	-- language
+	local lang = repo.language or (repo.parent and repo.parent.language)
+	if lang then
+		str = str .. "**Language: " .. lang .. "**"
+	end
+	
+	-- license
+	if repo.license then
+		str = str .. "\n**License: " .. (repo.license and repo.license.name) .. "**"
+	end
+	
+	-- stars
+	str = str .. "\n:star: " .. repo.stargazers_count
+	
+	-- watchers
+	str = str .. "\n:eye: " .. repo.watchers_count
+	
+	-- forks
+	str = str .. "\n:menorah: " .. repo.forks
+	
+	-- if fork
+	if repo.fork then
+		str = str .. "\n:open_mouth: **Fork of this [repo]("..repo.parent.html_url..")**"
+	end
+	
+	embed.fields = {
+		{
+			name = "Data";
+			value = str;
+			inline = false;
+		}
+	}
+	
+	msg:reply {
+		embed = embed
+	}
 end
 
 return module
